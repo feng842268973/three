@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用three.js创建你的第一个三维场景</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../assets/three.min.js"></script>
+    <script src="../assets/stats.min.js"></script>
+    <script src="../assets/dat.gui.min.js"></script>
+</head>
+<body onload="onLoad()">
+    <div id="canvas"></div>
+    <script>
+        function onLoad(){
+            // 创建场景
+            var scene=new THREE.Scene()
+            // 创建相机
+            var camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000)
+            // 创建渲染器
+            var renderer=new THREE.WebGLRenderer()
+            // renderer背景色设置
+            renderer.setClearColor(0xEEEEEE)
+            //设置renderder需要阴影
+            renderer.shadowMap.enabled=true
+            // renderer大小（宽，高）
+            renderer.setSize(window.innerWidth,window.innerHeight)
+            // 实例化坐标轴对象，并加入场景
+            var axes=new THREE.AxesHelper(20)
+            scene.add(axes)
+            // 创建灯光，并设置位置，加入场景
+            var spotLight=new THREE.SpotLight(0xffffff)
+            spotLight.position.set(-40,60,-10)
+            //光源产生阴影
+            spotLight.castShadow=true
+            scene.add(spotLight)
+            // 创建一个平面，并设置位置，加入场景
+            var planeGeometry=new THREE.PlaneGeometry(60,20,1,1)
+            var planeMaterial=new THREE.MeshLambertMaterial({color:0Xcccccc})
+            var plane=new THREE.Mesh(planeGeometry,planeMaterial)
+            //plane接受阴影
+            plane.receiveShadow=true
+            plane.rotation.x=-0.5*Math.PI
+            plane.position.x=15
+            plane.position.y=0
+            plane.position.z=0
+            scene.add(plane)
+            // 创建一个立方体，并设置位置，加入场景
+            var cubeGeometry=new THREE.CubeGeometry(4,4,4)
+            var cubeMaterial=new THREE.MeshLambertMaterial({color:0Xff0000})
+            var cube=new  THREE.Mesh(cubeGeometry,cubeMaterial)
+            //cube投射阴影
+            cube.castShadow=true
+            cube.position.x=-4
+            cube.position.y=3
+            cube.position.z=0
+            scene.add(cube)
+            // 创建一个球体，并设置位置，加入场景
+            var sphereGeometry=new THREE.SphereGeometry(4,20,20)
+            var sphereMaterial=new THREE.MeshLambertMaterial({color:0X7777ff})
+            var sphere=new THREE.Mesh(sphereGeometry,sphereMaterial)
+            //sphere投射阴影
+            sphere.castShadow=true
+            sphere.position.x=20
+            sphere.position.y=4
+            sphere.position.z=2
+            scene.add(sphere)
+            // 设置相机的位置
+            camera.position.set(-30,40,30)
+            // 设置相机的方向
+            camera.lookAt(scene.position)
+            //dat.GUI 库
+            var controls=new function(){
+                this.rotationSpeed=0.02
+                this.bouncingSpeed=0.03
+            }
+            var gui=new dat.GUI()
+            gui.add(controls,'rotationSpeed',0,0.05)
+            gui.add(controls,'bouncingSpeed',0,0.05)
+            // 添加画布到页面中
+            var _canvas=document.querySelector('#canvas')
+            _canvas.append(renderer.domElement)
+            //添加性能检测
+            var stats = new Stats();
+            stats.setMode(1);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            document.body.appendChild(stats.domElement);
+            // 渲染
+            var step=0
+            function rendererScene(){
+                //stats统计更新
+                stats.update()
+                // 小球弹跳
+                step+=controls.bouncingSpeed
+                sphere.position.x=20+(10*Math.cos(step))
+                sphere.position.y=2+(10*Math.abs(Math.sin(step)))
+                // cube旋转
+                cube.rotation.x+=controls.rotationSpeed
+                cube.rotation.y+=controls.rotationSpeed
+                cube.rotation.z+=controls.rotationSpeed
+                requestAnimationFrame(rendererScene)
+                renderer.render(scene,camera)
+            }
+            rendererScene()
+        }
+    </script>
+</body>
+</html>

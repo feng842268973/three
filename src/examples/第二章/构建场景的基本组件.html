@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用three.js创建你的第一个三维场景</title>
+    <style>
+        body{
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../../assets/three.min.js"></script>
+    <script src="../../assets/stats.min.js"></script>
+    <script src="../../assets/dat.gui.min.js"></script>
+</head>
+<body onload="onLoad()">
+    <div id="canvas"></div>
+    <script>
+        function onLoad(){
+            // 创建场景
+            var scene=new THREE.Scene()
+            // 添加雾化
+            scene.fog=new THREE.Fog(0xffffff,0.015,100)
+            // 使用材质覆盖属性
+            // scene.overrideMaterial=new THREE.MeshLambertMaterial({color:0xffffff})
+            // 创建相机
+            var camera=new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000)
+            // 创建渲染器
+            var renderer=new THREE.WebGLRenderer()
+            // renderer背景色设置
+            renderer.setClearColor(0xEEEEEE)
+            //设置renderder需要阴影
+            renderer.shadowMap.enabled=true
+            // renderer大小（宽，高）
+            renderer.setSize(window.innerWidth,window.innerHeight)
+            // 实例化坐标轴对象，并加入场景
+            var axes=new THREE.AxesHelper(20)
+            scene.add(axes)
+            // 创建环境光，并设置位置，加入场景
+            var ambientLight=new THREE.AmbientLight(0x0c0c0c)
+            scene.add(ambientLight)
+            var spotLight=new THREE.SpotLight(0xffffff)  
+            spotLight.position.set(-40,60,-10)          
+            spotLight.castShadow=true
+            scene.add(spotLight)
+            // 创建一个平面，并设置位置，加入场景
+            var planeGeometry=new THREE.PlaneGeometry(60,40,1,1)
+            var planeMaterial=new THREE.MeshLambertMaterial({color:0Xcccccc})
+            var plane=new THREE.Mesh(planeGeometry,planeMaterial)
+            //plane接受阴影
+            plane.receiveShadow=true
+            plane.rotation.x=-0.5*Math.PI
+            plane.position.x=15
+            plane.position.y=0
+            plane.position.z=0
+            scene.add(plane)
+            // 设置相机的位置
+            camera.position.set(-30,40,30)
+            // 设置相机的方向
+            camera.lookAt(scene.position)
+            //dat.GUI 库
+            var controls=new function(){
+                this.rotationSpeed=0.02
+                this.addCube=function(){
+
+                var cubeSize=Math.ceil((Math.random()*3))
+                var cubeGeometry=new THREE.CubeGeometry(cubeSize,cubeSize,cubeSize)
+                var cubeMaterials=[new THREE.MeshLambertMaterial({
+                    color:Math.random() * 0xffffff,opacity:0.6,transparent:true
+                }),new THREE.MeshBasicMaterial({color:0x000000,wireframe:true})]
+                var cube=new THREE.SceneUtils.createMultiMaterialObject(cubeGeometry,cubeMaterials)
+                cube.castShadow=true
+                cube.name="cube-"+scene.children.length
+                cube.position.x=-30 +Math.round((Math.random()*planeGeometry.parameters.width))
+                cube.position.y=Math.round((Math.random()*5))
+                cube.position.z=Math.round(Math.random()*planeGeometry.parameters.height)
+                scene.add(cube)
+                console.log(cube)
+                this.numberofObjects=scene.children.length
+                }
+                this.removeCube=function(){
+                    var allChildren=scene.children
+                    var lastObject=allChildren[allChildren.length-1]
+                    if(lastObject instanceof THREE.Mesh){
+                        scene.remove(lastObject)
+                        this.numberofObjects=scene.children.length
+                    }
+                }
+            }
+            var gui=new dat.GUI()
+            gui.add(controls,'rotationSpeed',0,0.05)
+            gui.add(controls,'addCube')
+            gui.add(controls,'removeCube')
+            // 添加画布到页面中
+            var _canvas=document.querySelector('#canvas')
+            _canvas.append(renderer.domElement)
+            //添加性能检测
+            var stats = new Stats();
+            stats.setMode(1);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            document.body.appendChild(stats.domElement);
+            this.outputObjects=function(){
+                console.log(scene.children)
+            }
+            // 渲染
+            var step=0
+            function rendererScene(){
+                //stats统计更新
+                stats.update()
+                scene.traverse(function(e){
+                    if(e instanceof THREE.Mesh && e!=plane){
+                        e.rotation.x+=controls.rotationSpeed
+                        e.rotation.y+=controls.rotationSpeed
+                        e.rotation.z+=controls.rotationSpeed
+                    }
+                })
+                requestAnimationFrame(rendererScene)
+                renderer.render(scene,camera)
+            }
+            rendererScene()
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>构建场景的基本组件</title>
+    <title>threejs中的光源</title>
     <style>
         body{
             margin: 0;
@@ -14,6 +14,7 @@
     <script src="../../assets/three.min.js"></script>
     <script src="../../assets/stats.min.js"></script>
     <script src="../../assets/dat.gui.min.js"></script>
+    <script src="../../assets/SceneUtils.js"></script>
 </head>
 <body onload="onLoad()">
     <div id="canvas"></div>
@@ -39,16 +40,18 @@
             var axes=new THREE.AxesHelper(20)
             scene.add(axes)
             // 创建环境光，并设置位置，加入场景
-            var ambientLight=new THREE.AmbientLight(0x0c0c0c)
-            scene.add(ambientLight)
+            var ambiColor='#0c0c0c'
+            var ambientLight=new THREE.AmbientLight(ambiColor)
+            // scene.add(ambientLight)
             var spotLight=new THREE.SpotLight(0xffffff)  
-            spotLight.position.set(-40,60,-10)          
+            spotLight.position.set(-40,60,-10) 
             spotLight.castShadow=true
+            spotLight.shadowCameraVisible=true         
             scene.add(spotLight)
             // 创建一个平面，并设置位置，加入场景
-            var planeGeometry=new THREE.PlaneGeometry(60,40,1,1)
-            var planeMaterial=new THREE.MeshLambertMaterial({color:0Xcccccc})
-            var plane=new THREE.Mesh(planeGeometry,planeMaterial)
+            var planeGeometry = new THREE.PlaneGeometry(60, 20, 1, 1);
+            var planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+            var plane = new THREE.Mesh(planeGeometry, planeMaterial);
             //plane接受阴影
             plane.receiveShadow=true
             plane.rotation.x=-0.5*Math.PI
@@ -57,42 +60,39 @@
             plane.position.z=0
             scene.add(plane)
             // 设置相机的位置
-            camera.position.set(-30,40,30)
+            camera.position.set(-25,30,25)
             // 设置相机的方向
-            camera.lookAt(scene.position)
+            camera.lookAt(new THREE.Vector3(10,0,0))
             //dat.GUI 库
+            var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+            var cubeMaterial = new THREE.MeshLambertMaterial({color: 0xff0000});
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.castShadow = true;
+            cube.position.x = -4;
+            cube.position.y = 3;
+            cube.position.z = 0;
+            scene.add(cube);
+            
+            var sphereGeometry = new THREE.SphereGeometry(4, 20, 20);
+            var sphereMaterial = new THREE.MeshLambertMaterial({color: 0x7777ff});
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+            sphere.position.x = 20;
+            sphere.position.y = 0;
+            sphere.position.z = 2;
+            sphere.castShadow = true;
+            scene.add(sphere);
             var controls=new function(){
                 this.rotationSpeed=0.02
-                this.addCube=function(){
-
-                var cubeSize=Math.ceil((Math.random()*3))
-                var cubeGeometry=new THREE.CubeGeometry(cubeSize,cubeSize,cubeSize)
-                var cubeMaterials=[new THREE.MeshLambertMaterial({
-                    color:Math.random() * 0xffffff,opacity:0.6,transparent:true
-                }),new THREE.MeshBasicMaterial({color:0x000000,wireframe:true})]
-                var cube=new THREE.SceneUtils.createMultiMaterialObject(cubeGeometry,cubeMaterials)
-                cube.castShadow=true
-                cube.name="cube-"+scene.children.length
-                cube.position.x=-30 +Math.round((Math.random()*planeGeometry.parameters.width))
-                cube.position.y=Math.round((Math.random()*5))
-                cube.position.z=Math.round(Math.random()*planeGeometry.parameters.height)
-                scene.add(cube)
-                console.log(cube)
-                this.numberofObjects=scene.children.length
-                }
-                this.removeCube=function(){
-                    var allChildren=scene.children
-                    var lastObject=allChildren[allChildren.length-1]
-                    if(lastObject instanceof THREE.Mesh){
-                        scene.remove(lastObject)
-                        this.numberofObjects=scene.children.length
-                    }
-                }
+                this.ambientColor=ambiColor
+                this.bouncingSpeed=0.02
             }
             var gui=new dat.GUI()
+            gui.add(controls,'bouncingSpeed',0,0.05)
             gui.add(controls,'rotationSpeed',0,0.05)
-            gui.add(controls,'addCube')
-            gui.add(controls,'removeCube')
+            gui.addColor(controls,'ambientColor').onChange(function(e){
+                ambientLight.color=new THREE.Color(e)
+            })
             // 添加画布到页面中
             var _canvas=document.querySelector('#canvas')
             _canvas.append(renderer.domElement)
@@ -111,13 +111,10 @@
             function rendererScene(){
                 //stats统计更新
                 stats.update()
-                scene.traverse(function(e){
-                    if(e instanceof THREE.Mesh && e!=plane){
-                        e.rotation.x+=controls.rotationSpeed
-                        e.rotation.y+=controls.rotationSpeed
-                        e.rotation.z+=controls.rotationSpeed
-                    }
-                })
+                step += controls.bouncingSpeed;
+                sphere.position.x = 20 + ( 10 * (Math.cos(step)));
+                sphere.position.y = 2 + ( 10 * Math.abs(Math.sin(step)));
+
                 requestAnimationFrame(rendererScene)
                 renderer.render(scene,camera)
             }

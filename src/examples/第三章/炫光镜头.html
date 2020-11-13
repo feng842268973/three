@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>炫光镜头</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../../assets/three.min.js"></script>
+    <script src="../../assets/stats.min.js"></script>
+    <script src="../../assets/dat.gui.min.js"></script>
+    <script src="../../assets/SceneUtils.js"></script>
+    <script src="../../assets/Lensflare.js"></script>
+</head>
+
+<body>
+    <div id="Stats-output">
+    </div>
+    <div id="WebGL-output">
+    </div>
+    <script>
+        function init() {
+
+            var stats = initStats();
+
+            var scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xaaaaaa, 0.010, 200);
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            // var cameraHelper = new THREE.CameraHelper(camera);
+            // scene.add(cameraHelper)
+            var renderer = new THREE.WebGLRenderer();
+
+            renderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            //纹理
+            var loader=new THREE.TextureLoader()
+            console.log(loader)
+            var textureGrass=loader.load('../../assets/image/grasslight-big.jpg')
+            textureGrass.wrapS=THREE.RepeatWrapping
+            textureGrass.wrapT=THREE.RepeatWrapping
+            textureGrass.repeat.set(4,4)
+            // 地面
+            var planeGeometry = new THREE.PlaneGeometry(1000, 1000, 20, 20);
+            var planeMaterial = new THREE.MeshLambertMaterial({map:textureGrass});
+            var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.receiveShadow = true;
+            plane.rotation.x = -0.5 * Math.PI;
+            plane.position.x = 15;
+            plane.position.y = 0;
+            plane.position.z = 0;
+            scene.add(plane);
+
+            // 方块
+            var cubeGeometry = new THREE.BoxGeometry(4, 4, 4);
+            var cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xf7777ff });
+            var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+            cube.castShadow = true;
+            cube.position.x = -4;
+            cube.position.y = 3;
+            cube.position.z = 0;
+            scene.add(cube);
+
+            // 球
+            var sphereGeometry = new THREE.SphereGeometry(4, 25, 25);
+            var sphereMaterial = new THREE.MeshLambertMaterial({ color: 0x7777ff });
+            var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            sphere.position.x = 10;
+            sphere.position.y = 5;
+            sphere.position.z = 10;
+            sphere.castShadow = true;
+            scene.add(sphere);
+
+            // 相机
+            camera.position.set(-50,15,300)
+            camera.lookAt(new THREE.Vector3(10, 0, 0));
+
+            // 光源指向
+            var target = new THREE.Object3D();
+            target.position = new THREE.Vector3(5, 0, 0);
+            var pointColor = "#ff5808";
+
+            var textureFlare0 = loader.load("../../assets/image/lensflare0.png");
+            var textureFlare3 = loader.load("../../assets/image/lensflare3.png");
+            var flareColor = new THREE.Color(0xffaacc);
+            var lensFlare = new THREE.Lensflare();
+            console.log(lensFlare)
+            lensFlare.addElement(new THREE.LensflareElement(textureFlare0, 350, 0.0, flareColor));
+            lensFlare.addElement(new THREE.LensflareElement(textureFlare3, 60, 0.6));
+            lensFlare.addElement(new THREE.LensflareElement(textureFlare3, 70, 0.7));
+            lensFlare.addElement(new THREE.LensflareElement(textureFlare3, 120, 0.9));
+            lensFlare.addElement(new THREE.LensflareElement(textureFlare3, 70, 1.0));
+            var spotLight0 = new THREE.SpotLight(0xcccccc,1.5,2000);
+            spotLight0.position.set(50, 10, 50);
+            spotLight0.lookAt(plane);
+            spotLight0.add(lensFlare);
+            scene.add(spotLight0);
+            // 实例化坐标轴对象，并加入场景
+            var axes = new THREE.AxesHelper(20)
+            scene.add(axes)
+
+            document.getElementById("WebGL-output").appendChild(renderer.domElement);
+
+            var step = 0;
+            var invert = 1;
+            var phase = 0;
+
+
+            var controls = new function () {
+                this.rotationSpeed = 0.03;
+                this.bouncingSpeed = 0.03;
+
+                this.hemisphere = true;
+                this.color = 0x00ff00;
+                this.skyColor = 0x0000ff;
+                this.intensity = 0.6;
+
+            };
+
+            var gui = new dat.GUI();
+            gui.add(controls, 'hemisphere').onChange(function (e) {
+
+                if (!e) {
+                    hemiLight.intensity = 0;
+                } else {
+                    hemiLight.intensity = controls.intensity;
+                }
+            });
+            gui.addColor(controls, 'color').onChange(function (e) {
+                hemiLight.groundColor = new THREE.Color(e);
+            });
+            gui.addColor(controls, 'skyColor').onChange(function (e) {
+                hemiLight.color = new THREE.Color(e);
+            });
+            gui.add(controls, 'intensity', 0, 5).onChange(function (e) {
+                hemiLight.intensity = e;
+            });
+            // 点光源
+            light = new THREE.PointLight(0xffffff, 1, 2000);
+            light.add(lensFlare);
+            light.position.set(0, 50, 0);
+            scene.add(light)
+
+            render();
+
+            function render() {
+                stats.update();
+                requestAnimationFrame(render);
+                renderer.render(scene, camera);
+            }
+
+            function initStats() {
+
+                var stats = new Stats();
+
+                stats.setMode(0); // 0: fps, 1: ms
+                stats.domElement.style.position = 'absolute';
+                stats.domElement.style.left = '0px';
+                stats.domElement.style.top = '0px';
+
+                document.getElementById("Stats-output").appendChild(stats.domElement);
+
+                return stats;
+            }
+        }
+
+        window.onload = init
+    </script>
+</body>
+
+</html>

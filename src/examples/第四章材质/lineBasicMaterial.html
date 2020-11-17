@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>threejs中的材质</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../../assets/three.min.js"></script>
+    <script src="../../assets/stats.min.js"></script>
+    <script src="../../assets/dat.gui.min.js"></script>
+    <script src="../../assets/SceneUtils.js"></script>
+</head>
+
+<body onload="onLoad()">
+    <div id="canvas"></div>
+    <script>
+        function gosper(a, b) {
+
+            var turtle = [0, 0, 0];
+            var points = [];
+            var count = 0;
+
+            rg(a, b, turtle);
+
+
+            return points;
+
+            //右走
+            function rt(x) {
+                turtle[2] += x;
+            }
+
+            //左走
+            function lt(x) {
+                turtle[2] -= x;
+            }
+
+            function fd(dist) {
+                //                ctx.beginPath();
+                points.push({ x: turtle[0], y: turtle[1], z: Math.sin(count) * 5 });
+                //                ctx.moveTo(turtle[0], turtle[1]);
+
+                var dir = turtle[2] * (Math.PI / 180);
+                turtle[0] += Math.cos(dir) * dist;
+                turtle[1] += Math.sin(dir) * dist;
+
+                points.push({ x: turtle[0], y: turtle[1], z: Math.sin(count) * 5 });
+                //                ctx.lineTo(turtle[0], turtle[1]);
+                //                ctx.stroke();
+
+            }
+
+            function rg(st, ln, turtle) {
+
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+                    //                    ctx.strokeStyle = '#111';
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    lt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                    rt(60);
+                }
+                if (st == 0) {
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    rt(60)
+                }
+            }
+
+            function gl(st, ln, turtle) {
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+                    //                    ctx.strokeStyle = '#555';
+                    lt(60);
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    rt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                }
+                if (st == 0) {
+                    lt(60);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                }
+            }
+        }
+        function onLoad() {
+            // 创建场景
+            var scene = new THREE.Scene()
+            // 添加雾化
+            scene.fog = new THREE.Fog(0xffffff, 0.015, 100)
+            // 使用材质覆盖属性
+            // scene.overrideMaterial=new THREE.MeshLambertMaterial({color:0xffffff})
+            // 创建相机
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000)
+            // 创建渲染器
+            var renderer = new THREE.WebGLRenderer()
+            // renderer背景色设置
+            renderer.setClearColor(0xEEEEEE)
+            //设置renderder需要阴影
+            renderer.shadowMap.enabled = true
+            // renderer大小（宽，高）
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            // 实例化坐标轴对象，并加入场景
+            var axes = new THREE.AxesHelper(20)
+            scene.add(axes)
+            // 创建环境光，并设置位置，加入场景
+            var ambiColor = '#0c0c0c'
+            var ambientLight = new THREE.AmbientLight(ambiColor)
+            // scene.add(ambientLight)
+            var spotLight = new THREE.SpotLight(0xffffff)
+            spotLight.position.set(-40, 60, -10)
+            spotLight.castShadow = true
+            scene.add(spotLight)
+
+            // 设置相机的位置
+            camera.position.set(-25, 30, 25)
+            // 设置相机的方向
+            camera.lookAt(new THREE.Vector3(10, 0, 0))
+
+            var points = gosper(4, 60)
+            var lines = new THREE.Geometry()
+            var colors = []
+            var i = 0;
+            points.forEach(function (e) {
+                lines.vertices.push(new THREE.Vector3(e.x, e.y, e.z))
+                colors[i] = new THREE.Color(0xffffff)
+                colors[i].setHSL(e.x / 100 + 0.5, (e.y * 20) / 300, 0.8)
+                i++
+            })
+            lines.colors = colors
+            var material = new THREE.LineBasicMaterial({
+                opacity: 1.0,
+                lineWidth: 1,
+                vertexColors: THREE.VertexColors
+            })
+            var line = new THREE.Line(lines, material)
+            scene.add(line)
+            // 添加画布到页面中
+            var _canvas = document.querySelector('#canvas')
+            _canvas.append(renderer.domElement)
+            //添加性能检测
+            var stats = new Stats();
+            stats.setMode(1);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            document.body.appendChild(stats.domElement);
+            this.outputObjects = function () {
+                console.log(scene.children)
+            }
+            // 渲染
+            var step = 0
+            function rendererScene() {
+                //stats统计更新
+                stats.update()
+                // group.rotation.x+=0.03
+                // group.rotation.y+=0.03
+                // group.rotation.z+=0.03
+                requestAnimationFrame(rendererScene)
+                renderer.render(scene, camera)
+            }
+            rendererScene()
+        }
+    </script>
+</body>
+
+</html>

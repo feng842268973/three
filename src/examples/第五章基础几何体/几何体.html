@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>threejs中的材质</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../../assets/three.min.js"></script>
+    <script src="../../assets/stats.min.js"></script>
+    <script src="../../assets/dat.gui.min.js"></script>
+    <script src="../../assets/SceneUtils.js"></script>
+</head>
+
+<body onload="onLoad()">
+    <div id="canvas"></div>
+    <script>
+        function gosper(a, b) {
+
+            var turtle = [0, 0, 0];
+            var points = [];
+            var count = 0;
+
+            rg(a, b, turtle);
+
+
+            return points;
+
+            //右走
+            function rt(x) {
+                turtle[2] += x;
+            }
+
+            //左走
+            function lt(x) {
+                turtle[2] -= x;
+            }
+
+            function fd(dist) {
+                //                ctx.beginPath();
+                points.push({ x: turtle[0], y: turtle[1], z: Math.sin(count) * 5 });
+                //                ctx.moveTo(turtle[0], turtle[1]);
+
+                var dir = turtle[2] * (Math.PI / 180);
+                turtle[0] += Math.cos(dir) * dist;
+                turtle[1] += Math.sin(dir) * dist;
+
+                points.push({ x: turtle[0], y: turtle[1], z: Math.sin(count) * 5 });
+                //                ctx.lineTo(turtle[0], turtle[1]);
+                //                ctx.stroke();
+
+            }
+
+            function rg(st, ln, turtle) {
+
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+                    //                    ctx.strokeStyle = '#111';
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    lt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                    rt(60);
+                }
+                if (st == 0) {
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                    rt(60)
+                }
+            }
+
+            function gl(st, ln, turtle) {
+                st--;
+                ln = ln / 2.6457;
+                if (st > 0) {
+                    //                    ctx.strokeStyle = '#555';
+                    lt(60);
+                    rg(st, ln, turtle);
+                    rt(60);
+                    gl(st, ln, turtle);
+                    gl(st, ln, turtle);
+                    rt(120);
+                    gl(st, ln, turtle);
+                    rt(60);
+                    rg(st, ln, turtle);
+                    lt(120);
+                    rg(st, ln, turtle);
+                    lt(60);
+                    gl(st, ln, turtle);
+                }
+                if (st == 0) {
+                    lt(60);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    fd(ln);
+                    rt(120);
+                    fd(ln);
+                    rt(60);
+                    fd(ln);
+                    lt(120);
+                    fd(ln);
+                    lt(60);
+                    fd(ln);
+                }
+            }
+        }
+        function onLoad() {
+            // 创建场景
+            var scene = new THREE.Scene()
+            // 添加雾化
+            scene.fog = new THREE.Fog(0xffffff, 0.015, 100)
+            // 使用材质覆盖属性
+            // scene.overrideMaterial=new THREE.MeshLambertMaterial({color:0xffffff})
+            // 创建相机
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000)
+            // 创建渲染器
+            var renderer = new THREE.WebGLRenderer({
+                antialias:true,
+                alpha:true
+            })
+            // renderer背景色设置
+            renderer.setClearColor(0xEEEEEE)
+            //设置renderder需要阴影
+            renderer.shadowMap.enabled = true
+            // renderer大小（宽，高）
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            // 实例化坐标轴对象，并加入场景
+            var axes = new THREE.AxesHelper(20)
+            scene.add(axes)
+            // 创建环境光，并设置位置，加入场景
+            var ambiColor = '#0c0c0c'
+            var ambientLight = new THREE.AmbientLight(ambiColor)
+            // scene.add(ambientLight)
+            var spotLight = new THREE.SpotLight(0xff00ff)
+            spotLight.position.set(40, 30, 20)
+            var spotLightHelper=new THREE.SpotLightHelper(spotLight)
+            scene.add(spotLightHelper)
+            spotLight.castShadow = true
+            scene.add(spotLight)
+
+            // 设置相机的位置
+            camera.position.set(60, 30, 45)
+            // 设置相机的方向
+            camera.lookAt(new THREE.Vector3(0, 0, 0))
+
+            var plane=new THREE.Mesh(new THREE.PlaneGeometry(10,10,8,8),
+            new THREE.MeshLambertMaterial({color:0xeeeeee,side:THREE.DoubleSide}))
+            plane.rotation.x=-Math.PI/2
+            scene.add(plane)
+
+            var arc=new THREE.Mesh(new THREE.CircleGeometry(5,20,Math.PI/6,Math.PI/6),
+            new THREE.MeshLambertMaterial({color:0xeeeeee,side:THREE.DoubleSide}))
+            arc.rotation.x=-Math.PI/2
+            arc.position.x=5
+            scene.add(arc)
+
+            var cube=new THREE.Mesh(new THREE.CubeGeometry(5,5,5),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            cube.position.x=15
+            scene.add(cube)
+
+            var sphere=new THREE.Mesh(new THREE.SphereGeometry(5,10,10,0,Math.PI,0,Math.PI),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            sphere.position.x=25
+            scene.add(sphere)
+
+            var cylinder=new THREE.Mesh(new THREE.CylinderGeometry(2,4,10,20,20,true),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            cylinder.position.x=15
+            cylinder.position.z=20
+            scene.add(cylinder)
+
+            var torus=new THREE.Mesh(new THREE.TorusGeometry(5,2,20,40),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            torus.rotation.x=-Math.PI/2
+            torus.position.x=0
+            torus.position.z=15
+            scene.add(torus)
+
+            var torusknot=new THREE.Mesh(new THREE.TorusKnotGeometry(2,1,20,40,1,1,0.8),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            torusknot.rotation.x=-Math.PI/2
+            torusknot.position.x=-10
+            torusknot.position.z=15
+            scene.add(torusknot)
+
+            var octahedron=new THREE.Mesh(new THREE.OctahedronGeometry(4),new THREE.MeshLambertMaterial({color:0xeeeeee}))
+            octahedron.position.x=-20
+            octahedron.position.z=0
+            scene.add(octahedron)
+
+            // 添加画布到页面中
+            var _canvas = document.querySelector('#canvas')
+            _canvas.append(renderer.domElement)
+            //添加性能检测
+            var stats = new Stats();
+            stats.setMode(1);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            document.body.appendChild(stats.domElement);
+            this.outputObjects = function () {
+                console.log(scene.children)
+            }
+            // 渲染
+            var step = 0
+            function rendererScene() {
+                // console.log(scene.children)
+                let children=scene.children
+                children.map(item=>{
+                    if(item instanceof THREE.Mesh){
+                        item.rotation.y+=0.02
+                    }
+                })
+                //stats统计更新
+                stats.update()
+                requestAnimationFrame(rendererScene)
+                renderer.render(scene, camera)
+            }
+            rendererScene()
+        }
+    </script>
+</body>
+
+</html>

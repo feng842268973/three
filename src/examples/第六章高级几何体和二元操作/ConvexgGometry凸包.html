@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>凸包</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <!-- 引入相关库 -->
+    <script src="../../assets/three.min.js"></script>
+    <script src="../../assets/stats.min.js"></script>
+    <script src="../../assets/dat.gui.min.js"></script>
+    <script src="../../assets/SceneUtils.js"></script>
+</head>
+
+<body >
+    <div id="canvas"></div>
+    <script type="module">
+        import {ConvexGeometry} from '../../assets/jsm/geometries/ConvexGeometry.js'
+        function onLoad() {
+            // 创建场景
+            var scene = new THREE.Scene()
+            // 添加雾化
+            scene.fog = new THREE.Fog(0xffffff, 0.015, 100)
+            // 使用材质覆盖属性
+            // scene.overrideMaterial=new THREE.MeshLambertMaterial({color:0xffffff})
+            // 创建相机
+            var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000)
+            // 创建渲染器
+            var renderer = new THREE.WebGLRenderer({
+                antialias:true,
+                alpha:true
+            })
+            // renderer背景色设置
+            renderer.setClearColor(0xEEEEEE)
+            //设置renderder需要阴影
+            renderer.shadowMap.enabled = true
+            // renderer大小（宽，高）
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            // 实例化坐标轴对象，并加入场景
+            var axes = new THREE.AxesHelper(20)
+            scene.add(axes)
+            // 创建环境光，并设置位置，加入场景
+            var ambiColor = '#0c0c0c'
+            var ambientLight = new THREE.AmbientLight(ambiColor)
+            // scene.add(ambientLight)
+            var spotLight = new THREE.SpotLight(0xff00ff)
+            spotLight.position.set(40, 30, 20)
+            var spotLightHelper=new THREE.SpotLightHelper(spotLight)
+            scene.add(spotLightHelper)
+            spotLight.castShadow = true
+            scene.add(spotLight)
+
+            // 设置相机的位置
+            camera.position.set(60, 30, 45)
+            // 设置相机的方向
+            camera.lookAt(new THREE.Vector3(0, 0, 0))
+            function generatePoints(){
+                var points=[]
+                for (var i=0;i<20;i++){
+                    var randomX=-15+Math.round(Math.random()*30)
+                    var randomY=-15+Math.round(Math.random()*30)
+                    var randomZ=-15+Math.round(Math.random()*30)
+                    points.push(new THREE.Vector3(randomX,randomY,randomZ))
+                }
+                var spGroup=new THREE.Object3D()
+                var material=new THREE.MeshBasicMaterial({color:0xff0000,opacity:0.5,transparent:true})
+                var material2=new THREE.MeshBasicMaterial({color:0x000000})
+                points.forEach(function(point){
+                    console.log(point)
+                    var spGeom=new THREE.SphereGeometry(0.1)
+                    var spMesh=new THREE.Mesh(spGeom,material2)
+                    spMesh.position.x=point.x
+                    spMesh.position.y=point.y
+                    spMesh.position.z=point.z
+                    spGroup.add(spMesh)
+                })
+                console.log(spGroup)
+                var convexGeometry=new ConvexGeometry(points)
+                var convexMesh=new THREE.Mesh(convexGeometry,material)
+                convexMesh.add(spGroup)
+                scene.add(convexMesh)
+            }
+            generatePoints()
+
+            // 添加画布到页面中
+            var _canvas = document.querySelector('#canvas')
+            _canvas.append(renderer.domElement)
+            //添加性能检测
+            var stats = new Stats();
+            stats.setMode(1);
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.left = '0px';
+            stats.domElement.top = '0px';
+            document.body.appendChild(stats.domElement);
+            // 渲染
+            var step = 0
+            function rendererScene() {
+                // console.log(scene.children)
+                let children=scene.children
+                children.map(item=>{
+                    if(item instanceof THREE.Mesh){
+                        item.rotation.y+=0.02
+                    }
+                })
+                //stats统计更新
+                stats.update()
+                requestAnimationFrame(rendererScene)
+                renderer.render(scene, camera)
+            }
+            rendererScene()
+        }
+        onLoad()
+    </script>
+</body>
+
+</html>
